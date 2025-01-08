@@ -537,152 +537,290 @@
 
 
 
+// import CoreBluetooth
+// import Flutter
+// import UIKit
+
+// class BluetoothPrinterHandler: NSObject, FlutterPlugin, CBCentralManagerDelegate, CBPeripheralDelegate {
+//     private var centralManager: CBCentralManager!
+//     private var discoveredPeripheral: CBPeripheral?
+//     private var writeCharacteristic: CBCharacteristic?
+//     private var pendingDataToWrite: Data?
+//     private var writeQueue = DispatchQueue(label: "com.bluetooth.writeQueue")
+//     private var flutterResult: FlutterResult?
+
+//     override init() {
+//         super.init()
+//         centralManager = CBCentralManager(delegate: self, queue: nil)
+//     }
+
+//     static func register(with registrar: FlutterPluginRegistrar) {
+//         let channel = FlutterMethodChannel(name: "bluetooth_printer_handler", binaryMessenger: registrar.messenger())
+//         let instance = BluetoothPrinterHandler()
+//         registrar.addMethodCallDelegate(instance, channel: channel)
+//     }
+
+//     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+//         if call.method == "printstring" {
+//             guard let args = call.arguments as? [String: Any],
+//                   let deviceIdentifier = args["deviceIdentifier"] as? String,
+//                   let message = args["message"] as? String else {
+//                 result(FlutterError(code: "INVALID_ARGUMENTS", message: "Invalid arguments received", details: nil))
+//                 return
+//             }
+
+//             flutterResult = result
+//             connectToDevice(identifier: deviceIdentifier, message: message)
+//         } else {
+//             result(FlutterMethodNotImplemented)
+//         }
+//     }
+
+//     private func connectToDevice(identifier: String, message: String) {
+//         guard let uuid = UUID(uuidString: identifier) else {
+//             flutterResult?(FlutterError(code: "INVALID_IDENTIFIER", message: "Invalid device identifier", details: nil))
+//             return
+//         }
+
+//         if let peripheral = centralManager.retrievePeripherals(withIdentifiers: [uuid]).first {
+//             discoveredPeripheral = peripheral
+//             centralManager.connect(peripheral, options: nil)
+//             pendingDataToWrite = message.data(using: .utf8)
+//         } else {
+//             flutterResult?(FlutterError(code: "DEVICE_NOT_FOUND", message: "Device not found", details: nil))
+//         }
+//     }
+
+//     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+//         if central.state != .poweredOn {
+//             flutterResult?(FlutterError(code: "BLUETOOTH_OFF", message: "Bluetooth is not powered on", details: nil))
+//         }
+//     }
+
+//     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+//         discoveredPeripheral = peripheral
+//         peripheral.delegate = self
+//         peripheral.discoverServices(nil)
+//     }
+
+//     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+//         flutterResult?(FlutterError(code: "CONNECTION_FAILED", message: "Failed to connect to the device", details: error?.localizedDescription))
+//         cleanupConnection()
+//     }
+
+//     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+//         if let error = error {
+//             flutterResult?(FlutterError(code: "DISCONNECTED", message: "Disconnected from device", details: error.localizedDescription))
+//         } else {
+//             flutterResult?("DISCONNECTED")
+//         }
+//         cleanupConnection()
+//     }
+
+//     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+//         if let error = error {
+//             flutterResult?(FlutterError(code: "SERVICE_DISCOVERY_FAILED", message: "Failed to discover services", details: error.localizedDescription))
+//             cleanupConnection()
+//             return
+//         }
+
+//         guard let services = peripheral.services else {
+//             flutterResult?(FlutterError(code: "NO_SERVICES", message: "No services found on the device", details: nil))
+//             cleanupConnection()
+//             return
+//         }
+
+//         for service in services {
+//             peripheral.discoverCharacteristics(nil, for: service)
+//         }
+//     }
+
+//     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+//         if let error = error {
+//             flutterResult?(FlutterError(code: "CHARACTERISTIC_DISCOVERY_FAILED", message: "Failed to discover characteristics", details: error.localizedDescription))
+//             cleanupConnection()
+//             return
+//         }
+
+//         guard let characteristics = service.characteristics else {
+//             flutterResult?(FlutterError(code: "NO_CHARACTERISTICS", message: "No characteristics found", details: nil))
+//             cleanupConnection()
+//             return
+//         }
+
+//         for characteristic in characteristics {
+//             if characteristic.properties.contains(.write) {
+//                 writeCharacteristic = characteristic
+//                 if let data = pendingDataToWrite {
+//                     writeData(data, to: characteristic, on: peripheral)
+//                 }
+//                 return
+//             }
+//         }
+
+//         flutterResult?(FlutterError(code: "WRITE_CHARACTERISTIC_NOT_FOUND", message: "No writable characteristic found", details: nil))
+//         cleanupConnection()
+//     }
+
+//     private func writeData(_ data: Data, to characteristic: CBCharacteristic, on peripheral: CBPeripheral) {
+//         writeQueue.async {
+//             peripheral.writeValue(data, for: characteristic, type: .withResponse)
+//         }
+//     }
+
+//     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+//         if let error = error {
+//             flutterResult?(FlutterError(code: "WRITE_FAILED", message: "Failed to write data", details: error.localizedDescription))
+//         } else {
+//             flutterResult?("SUCCESS")
+//         }
+//         cleanupConnection()
+//     }
+
+//     private func cleanupConnection() {
+//         if let peripheral = discoveredPeripheral {
+//             centralManager.cancelPeripheralConnection(peripheral)
+//         }
+//         discoveredPeripheral = nil
+//         writeCharacteristic = nil
+//         pendingDataToWrite = nil
+//     }
+// }
+
+
+
+
+
+
 import CoreBluetooth
 import Flutter
 import UIKit
 
-class BluetoothPrinterHandler: NSObject, FlutterPlugin, CBCentralManagerDelegate, CBPeripheralDelegate {
+public class BluetoothManager: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     private var centralManager: CBCentralManager!
-    private var discoveredPeripheral: CBPeripheral?
-    private var writeCharacteristic: CBCharacteristic?
-    private var pendingDataToWrite: Data?
-    private var writeQueue = DispatchQueue(label: "com.bluetooth.writeQueue")
-    private var flutterResult: FlutterResult?
+    private var connectedPeripheral: CBPeripheral!
+    private var targetCharacteristic: CBCharacteristic!
+    private var stringprint: String = ""
 
-    override init() {
+    public override init() {
         super.init()
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        self.centralManager = CBCentralManager(delegate: self, queue: nil)
     }
 
-    static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "bluetooth_printer_handler", binaryMessenger: registrar.messenger())
-        let instance = BluetoothPrinterHandler()
-        registrar.addMethodCallDelegate(instance, channel: channel)
-    }
-
-    func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        if call.method == "printstring" {
-            guard let args = call.arguments as? [String: Any],
-                  let deviceIdentifier = args["deviceIdentifier"] as? String,
-                  let message = args["message"] as? String else {
-                result(FlutterError(code: "INVALID_ARGUMENTS", message: "Invalid arguments received", details: nil))
-                return
-            }
-
-            flutterResult = result
-            connectToDevice(identifier: deviceIdentifier, message: message)
-        } else {
-            result(FlutterMethodNotImplemented)
+    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        switch central.state {
+        case .poweredOn:
+            print("Bluetooth is powered on")
+        case .poweredOff:
+            print("Bluetooth is powered off")
+        case .unsupported:
+            print("Bluetooth is not supported on this device")
+        case .unauthorized:
+            print("Bluetooth usage is not authorized")
+        case .resetting:
+            print("Bluetooth is resetting")
+        case .unknown:
+            print("Bluetooth state is unknown")
+        @unknown default:
+            print("Unknown Bluetooth state")
         }
     }
 
-    private func connectToDevice(identifier: String, message: String) {
-        guard let uuid = UUID(uuidString: identifier) else {
-            flutterResult?(FlutterError(code: "INVALID_IDENTIFIER", message: "Invalid device identifier", details: nil))
+    public func connectToDevice(macAddress: String, result: @escaping FlutterResult) {
+        guard let uuid = UUID(uuidString: macAddress) else {
+            result(["status": false, "message": "Invalid MAC address"])
             return
         }
 
-        if let peripheral = centralManager.retrievePeripherals(withIdentifiers: [uuid]).first {
-            discoveredPeripheral = peripheral
-            centralManager.connect(peripheral, options: nil)
-            pendingDataToWrite = message.data(using: .utf8)
+        let peripherals = centralManager.retrievePeripherals(withIdentifiers: [uuid])
+
+        guard let peripheral = peripherals.first else {
+            result(["status": false, "message": "Device not found"])
+            return
+        }
+
+        centralManager.connect(peripheral, options: nil)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            if peripheral.state == .connected {
+                self.connectedPeripheral = peripheral
+                self.connectedPeripheral.delegate = self
+                self.connectedPeripheral.discoverServices(nil)
+                result(["status": true, "message": "Connected successfully"])
+            } else {
+                result(["status": false, "message": "Connection failed"])
+            }
+        }
+    }
+
+    public func writeBytes(arguments: [Int], result: @escaping FlutterResult) {
+        guard let characteristic = targetCharacteristic else {
+            result(["status": false, "message": "No characteristic to write to"])
+            return
+        }
+
+        let bytes = arguments.map { UInt8($0) }
+        let data = Data(bytes)
+
+        do {
+            connectedPeripheral.writeValue(data, for: characteristic, type: .withoutResponse)
+            result(["status": true, "message": "Data written successfully"])
+        } catch {
+            result(["status": false, "message": "Write operation failed: \(error.localizedDescription)"])
+        }
+    }
+
+    public func printString(arguments: String, result: @escaping FlutterResult) {
+        self.stringprint = arguments
+
+        guard let characteristic = targetCharacteristic else {
+            result(["status": false, "message": "No characteristic for printing"])
+            return
+        }
+
+        if !self.stringprint.isEmpty {
+            let data = Data(self.stringprint.utf8)
+
+            do {
+                connectedPeripheral.writeValue(data, for: characteristic, type: .withResponse)
+                self.stringprint = ""
+                result(["status": true, "message": "Printed successfully"])
+            } catch {
+                result(["status": false, "message": "Print operation failed: \(error.localizedDescription)"])
+            }
         } else {
-            flutterResult?(FlutterError(code: "DEVICE_NOT_FOUND", message: "Device not found", details: nil))
+            result(["status": false, "message": "No data to print"])
         }
     }
 
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state != .poweredOn {
-            flutterResult?(FlutterError(code: "BLUETOOTH_OFF", message: "Bluetooth is not powered on", details: nil))
-        }
-    }
-
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        discoveredPeripheral = peripheral
-        peripheral.delegate = self
+    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        print("Connected to peripheral: \(peripheral.name ?? "Unknown")")
         peripheral.discoverServices(nil)
     }
 
-    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        flutterResult?(FlutterError(code: "CONNECTION_FAILED", message: "Failed to connect to the device", details: error?.localizedDescription))
-        cleanupConnection()
-    }
-
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let error = error {
-            flutterResult?(FlutterError(code: "DISCONNECTED", message: "Disconnected from device", details: error.localizedDescription))
-        } else {
-            flutterResult?("DISCONNECTED")
-        }
-        cleanupConnection()
-    }
-
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        if let error = error {
-            flutterResult?(FlutterError(code: "SERVICE_DISCOVERY_FAILED", message: "Failed to discover services", details: error.localizedDescription))
-            cleanupConnection()
+            print("Error discovering services: \(error.localizedDescription)")
             return
         }
 
-        guard let services = peripheral.services else {
-            flutterResult?(FlutterError(code: "NO_SERVICES", message: "No services found on the device", details: nil))
-            cleanupConnection()
-            return
-        }
-
+        guard let services = peripheral.services else { return }
         for service in services {
+            print("Discovered service: \(service.uuid)")
             peripheral.discoverCharacteristics(nil, for: service)
         }
     }
 
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let error = error {
-            flutterResult?(FlutterError(code: "CHARACTERISTIC_DISCOVERY_FAILED", message: "Failed to discover characteristics", details: error.localizedDescription))
-            cleanupConnection()
+            print("Error discovering characteristics: \(error.localizedDescription)")
             return
         }
 
-        guard let characteristics = service.characteristics else {
-            flutterResult?(FlutterError(code: "NO_CHARACTERISTICS", message: "No characteristics found", details: nil))
-            cleanupConnection()
-            return
-        }
-
+        guard let characteristics = service.characteristics else { return }
         for characteristic in characteristics {
-            if characteristic.properties.contains(.write) {
-                writeCharacteristic = characteristic
-                if let data = pendingDataToWrite {
-                    writeData(data, to: characteristic, on: peripheral)
-                }
-                return
-            }
+            print("Discovered characteristic: \(characteristic.uuid)")
+            self.targetCharacteristic = characteristic
         }
-
-        flutterResult?(FlutterError(code: "WRITE_CHARACTERISTIC_NOT_FOUND", message: "No writable characteristic found", details: nil))
-        cleanupConnection()
-    }
-
-    private func writeData(_ data: Data, to characteristic: CBCharacteristic, on peripheral: CBPeripheral) {
-        writeQueue.async {
-            peripheral.writeValue(data, for: characteristic, type: .withResponse)
-        }
-    }
-
-    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error = error {
-            flutterResult?(FlutterError(code: "WRITE_FAILED", message: "Failed to write data", details: error.localizedDescription))
-        } else {
-            flutterResult?("SUCCESS")
-        }
-        cleanupConnection()
-    }
-
-    private func cleanupConnection() {
-        if let peripheral = discoveredPeripheral {
-            centralManager.cancelPeripheralConnection(peripheral)
-        }
-        discoveredPeripheral = nil
-        writeCharacteristic = nil
-        pendingDataToWrite = nil
     }
 }
