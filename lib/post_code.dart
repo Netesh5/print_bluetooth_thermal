@@ -3,7 +3,12 @@ import 'package:flutter/services.dart';
 //import 'package:image/image.dart' as img;
 
 class PostCode {
-  static List<int> text({required String text, AlignPos align = AlignPos.left, bool bold = false, bool inverse = false, FontSize fontSize = FontSize.normal}) {
+  static List<int> text(
+      {required String text,
+      AlignPos align = AlignPos.left,
+      bool bold = false,
+      bool inverse = false,
+      FontSize fontSize = FontSize.normal}) {
     String enter = "\n";
     String reset = '\x1B@';
     String alignmentCode = "";
@@ -71,13 +76,15 @@ class PostCode {
     return text.codeUnits;
   }
 
-  static List<int> barcode({required String barcodeData, AlignPos align = AlignPos.center}) {
+  static List<int> barcode(
+      {required String barcodeData, AlignPos align = AlignPos.center}) {
     // Comando para restablecer la impresora
     String reset = '\x1B@';
     String enter = '\n';
 
     // Comando para imprimir un código de barras Code 128
-    String barcodeCommand = '\x1D\x68\x64\x1D\x77\x02\x1D\x48\x02\x1D\x6B\x49\x0C$barcodeData\x00';
+    String barcodeCommand =
+        '\x1D\x68\x64\x1D\x77\x02\x1D\x48\x02\x1D\x6B\x49\x0C$barcodeData\x00';
 
     // Aplicar los comandos según los parámetros
     const cAlignLeft = '\x1Ba0'; // Alinear a la izquierda
@@ -117,16 +124,19 @@ class PostCode {
 
     // FN 167. QR Code: Set the size of module
     // pL pH cn fn n
-    bytes += cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x43] + [QRSize.size5.value];
+    bytes +=
+        cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x43] + [QRSize.size5.value];
 
     // FN 169. QR Code: Select the error correction level
     // pL pH cn fn n
-    bytes += cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x45] + [QRCorrection.L.value];
+    bytes +=
+        cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x45] + [QRCorrection.L.value];
 
     // FN 180. QR Code: Store the data in the symbol storage area
     List<int> textBytes = latin1.encode(text);
     // pL pH cn fn m
-    bytes += cQrHeader.codeUnits + [textBytes.length + 3, 0x00, 0x31, 0x50, 0x30];
+    bytes +=
+        cQrHeader.codeUnits + [textBytes.length + 3, 0x00, 0x31, 0x50, 0x30];
     bytes += textBytes;
 
     // FN 182. QR Code: Transmit the size information of the symbol data in the symbol storage area
@@ -144,14 +154,19 @@ class PostCode {
   /// @texts = List of texts to place on the line.
   /// @porportions = List of proportions between (1 and 100) %.
   /// @fontSize = FontSize.normal
-  static List<int> row({required List<String> texts, required List<int> proportions, FontSize fontSize = FontSize.normal, AlignPos align = AlignPos.left}) {
+  static List<int> row(
+      {required List<String> texts,
+      required List<int> proportions,
+      FontSize fontSize = FontSize.normal,
+      AlignPos align = AlignPos.left}) {
     String textadd = "";
     String reset = '\x1B@';
     String enter = "\n";
 
     //revisar si los textops y las proporciones estan en la misma cantidad
     if (proportions.length != texts.length) {
-      String msj = "error: La cantidad de proporciones y texts debe ser mayor igual (proportions: ${proportions.length} texts: ${texts.length})";
+      String msj =
+          "error: La cantidad de proporciones y texts debe ser mayor igual (proportions: ${proportions.length} texts: ${texts.length})";
       throw Exception(msj);
     }
     //revisar el total de proporciones
@@ -205,7 +220,8 @@ class PostCode {
     }*/
 
     if (totalProporciones != 100) {
-      String msj = "error: el total de proporciones debe ser igual a 100% ($totalProporciones %)";
+      String msj =
+          "error: el total de proporciones debe ser igual a 100% ($totalProporciones %)";
       throw Exception(msj);
     }
 
@@ -262,7 +278,8 @@ class PostCode {
     return enter.codeUnits;
   }
 
-  static List<int> line({String typeLine = "-", FontSize fontSize = FontSize.normal}) {
+  static List<int> line(
+      {String typeLine = "-", FontSize fontSize = FontSize.normal}) {
     String reset = '\x1B@';
     String enter = "\n";
 

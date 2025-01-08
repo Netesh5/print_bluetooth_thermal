@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal_windows.dart';
 
 class PrintBluetoothThermal {
-  static const MethodChannel _channel = const MethodChannel('groons.web.app/print');
+  static const MethodChannel _channel =
+      const MethodChannel('groons.web.app/print');
 
   ///Check if it is allowed on Android 12 access to Bluetooth onwards
   static Future<bool> get isPermissionBluetoothGranted async {
@@ -14,7 +15,8 @@ class PrintBluetoothThermal {
       return true;
     } else if (Platform.isAndroid || Platform.isIOS) {
       try {
-        bluetoothState = await _channel.invokeMethod('ispermissionbluetoothgranted');
+        bluetoothState =
+            await _channel.invokeMethod('ispermissionbluetoothgranted');
         //print("llego: $bluetoothState");
       } on PlatformException catch (e) {
         print("Fallo Bluetooth status: '${e.message}'.");
@@ -135,7 +137,8 @@ class PrintBluetoothThermal {
         return false;
       }
     } else {
-      throw UnimplementedError("This functionality is not yet implemented. Please use the writeBytes option.");
+      throw UnimplementedError(
+          "This functionality is not yet implemented. Please use the writeBytes option.");
     }
   }
 

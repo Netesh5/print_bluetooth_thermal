@@ -23,7 +23,8 @@ class PrintBluetoothThermalWindows {
   static Future<void> initialize() async {
     if (!_isInitialized) {
       // Lógica de inicialización que solo debe ejecutarse una vez
-      await WinBle.initialize(serverPath: await WinServer.path(), enableLog: false);
+      await WinBle.initialize(
+          serverPath: await WinServer.path(), enableLog: false);
 
       // Marcar como inicializado
       _isInitialized = true;
@@ -52,7 +53,8 @@ class PrintBluetoothThermalWindows {
       //add bluetooth in list
       //print("event: ${event.name} add: $add isNotEmpty: ${event.name.trim().isNotEmpty}");
       if (add && event.name.trim().isNotEmpty) {
-        _bluetooths.add(BluetoothInfo(name: event.name, macAdress: event.address));
+        _bluetooths
+            .add(BluetoothInfo(name: event.name, macAdress: event.address));
       }
     });
 
@@ -71,14 +73,17 @@ class PrintBluetoothThermalWindows {
     Completer<bool> connectionCompleter = Completer<bool>();
 
     if (_connectionStream != null) _connectionStream!.cancel();
-    _connectionStream = WinBle.connectionStreamOf(macAddress).listen((bool status) async {
+    _connectionStream =
+        WinBle.connectionStreamOf(macAddress).listen((bool status) async {
       if (status) {
         //_macAddressConnect = macAddress;
         connectionCompleter.complete(true);
         print("connect status: $status");
       } else {
         //print("Finalizó el stream $event");
-        if (!connectionCompleter.isCompleted) connectionCompleter.complete(true); // Completar con error la Future en caso de desconexión.
+        if (!connectionCompleter.isCompleted)
+          connectionCompleter.complete(
+              true); // Completar con error la Future en caso de desconexión.
       }
     });
 
@@ -96,7 +101,9 @@ class PrintBluetoothThermalWindows {
     //print("Services: ${services.length}");
     for (String service in services) {
       //print("service: $service");
-      List<BleCharacteristic> bleCharacteristics = await WinBle.discoverCharacteristics(address: macAddress, serviceId: service);
+      List<BleCharacteristic> bleCharacteristics =
+          await WinBle.discoverCharacteristics(
+              address: macAddress, serviceId: service);
       //print("bleCharacteristics: ${bleCharacteristics.length}");
       for (BleCharacteristic characteristic in bleCharacteristics) {
         //print("service: $service -> bleCharacteristic: ${characteristic.properties.toJson()}");
@@ -116,7 +123,8 @@ class PrintBluetoothThermalWindows {
   static Future<bool> writeBytes({required List<int> bytes}) async {
     // To Write Characteristic
     try {
-      print("Writing: _macAddressConnect: $_macAddressConnect service: $_serviceSelect caractericsUid: ${_bleCharacteristicSelect?.uuid}");
+      print(
+          "Writing: _macAddressConnect: $_macAddressConnect service: $_serviceSelect caractericsUid: ${_bleCharacteristicSelect?.uuid}");
       await WinBle.write(
         address: _macAddressConnect,
         service: _serviceSelect,
@@ -133,7 +141,8 @@ class PrintBluetoothThermalWindows {
   }
 
   static Future<bool> disconnect() async {
-    if (_macAddressConnect.isNotEmpty) await WinBle.disconnect(_macAddressConnect);
+    if (_macAddressConnect.isNotEmpty)
+      await WinBle.disconnect(_macAddressConnect);
     _macAddressConnect = "";
     _bluetooths = [];
     return true;
